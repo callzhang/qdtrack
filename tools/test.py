@@ -7,15 +7,18 @@ from mmcv import Config, DictAction
 from mmcv.cnn import fuse_conv_bn
 from mmcv.parallel import MMDataParallel, MMDistributedDataParallel
 from mmcv.runner import get_dist_info, init_dist, load_checkpoint
-# from mmdet.core import wrap_fp16_model
+from mmdet.core import wrap_fp16_model
 from mmdet.datasets import build_dataset
 
 
 def parse_args():
     parser = argparse.ArgumentParser(description='qdtrack test model')
-    parser.add_argument('config', help='test config file path')
-    parser.add_argument('checkpoint', help='checkpoint file')
-    parser.add_argument('--out', help='output result file')
+    parser.add_argument('--config', default='configs/qdtrack-frcnn_r50_fpn_12e_bdd100k.py',
+            help='test config file path')
+    parser.add_argument('--checkpoint', default='models/qdtrack-frcnn_r50_fpn_12e_bdd100k-13328aed.pth',
+            help='checkpoint file')
+    parser.add_argument('--out', default='output/result.pkl',
+            help='output result file')
     parser.add_argument(
         '--fuse-conv-bn',
         action='store_true',
@@ -23,12 +26,13 @@ def parse_args():
         'the inference speed')
     parser.add_argument(
         '--format-only',
-        action='store_true',
+        action='store_true', default=True,
         help='Format the output results without perform evaluation. It is'
         'useful when you want to format the result to a specific format and '
         'submit it to the test server')
     parser.add_argument('--eval', type=str, nargs='+', help='eval types')
-    parser.add_argument('--show', action='store_true', help='show results')
+    parser.add_argument('--show', action='store_true', default=True,
+             help='show results')
     parser.add_argument(
         '--show-dir', help='directory where painted images will be saved')
     parser.add_argument(
@@ -117,9 +121,9 @@ def main():
 
     # build the model and load checkpoint
     model = build_model(cfg.model, train_cfg=None, test_cfg=None)
-    # fp16_cfg = cfg.get('fp16', None)
-    # if fp16_cfg is not None:
-    #     wrap_fp16_model(model)
+    fp16_cfg = cfg.get('fp16', None)
+    if fp16_cfg is not None:
+        wrap_fp16_model(model)
     checkpoint = load_checkpoint(model, args.checkpoint, map_location='cpu')
 
     if args.fuse_conv_bn:

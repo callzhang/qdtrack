@@ -1,4 +1,5 @@
 import warnings
+from bdd100k.label.to_coco import init
 
 import mmcv
 import numpy as np
@@ -6,11 +7,12 @@ import torch
 from mmcv.ops import RoIPool
 from mmcv.parallel import collate, scatter
 from mmcv.runner import load_checkpoint
-
 from mmdet.core import get_classes
 from mmdet.datasets import replace_ImageToTensor
 from mmdet.datasets.pipelines import Compose
+from qdtrack.datasets.pipelines.formatting import VideoCollect
 from qdtrack.models import build_model
+from glob import glob
 
 def init_model(config, checkpoint=None, device='cuda:0', cfg_options=None):
     """Initialize a detector from config file.
@@ -33,9 +35,9 @@ def init_model(config, checkpoint=None, device='cuda:0', cfg_options=None):
                         f'but got {type(config)}')
     if cfg_options is not None:
         config.merge_from_dict(cfg_options)
-    config.model.pretrained = None
+    # config.model.pretrained = None
     config.model.train_cfg = None
-    model = build_model(config.model, test_cfg=config.get('test_cfg'))
+    model = build_model(config.model, test_cfg=config.model.test_cfg)
     if checkpoint is not None:
         map_loc = 'cpu' if device == 'cpu' else None
         checkpoint = load_checkpoint(model, checkpoint, map_location=map_loc)
@@ -79,6 +81,8 @@ def inference_model(model, imgs):
         # set loading pipeline type
         cfg.data.test.pipeline[0].type = 'LoadImageFromWebcam'
 
+    # cfg.data.inference.pipeline = replace_ImageToTensor(cfg.data.inference.pipeline)
+    # inference_pipeline = Compose(cfg.data.inference.pipeline)
     cfg.data.test.pipeline = replace_ImageToTensor(cfg.data.test.pipeline)
     test_pipeline = Compose(cfg.data.test.pipeline)
 
@@ -111,7 +115,8 @@ def inference_model(model, imgs):
 
     # forward the model
     with torch.no_grad():
-        results = model(return_loss=False, rescale=True, detection_only=True, **data)
+        results = model(return_loss=False, rescale=True, **data)
+        # results = model(return_loss=False, rescale=True, detection_only=True, **data)
 
     if not is_batch:
         return results[0]
@@ -155,3 +160,13 @@ def show_result_pyplot(model,
         win_name=title,
         bbox_color=(72, 101, 241),
         text_color=(72, 101, 241))
+
+if __name__ == '__main__':
+    from random import choice
+    model = init_model(
+        config='configs/qdtrack-basch.py',
+        checkpoint='models/qdtrack-frcnn_r50_fpn_12e_bdd100k-13328aed.pth',
+    )
+    imgs = glob('data/bdd/images/track/test/cac07407-bc0b048a/*.jpg')
+    result = inference_model(model, imgs)
+    show_result_pyplot(model, choice(imgs), result)
