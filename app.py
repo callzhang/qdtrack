@@ -20,8 +20,8 @@ if __name__ == '__main__':
         result = pickle.load(open('temp/result', 'rb'))
         output = convert_result(result)
         # output = 'temp/result.csv'
-        post_processing(output, video, model.CLASSES)
+        post_processing(output, video, model.CLASSES, get_video=True)
 
-        import shutil
-        shutil.rmtree(img_folder, ignore_errors=True)
+        # import shutil
+        # shutil.rmtree(img_folder, ignore_errors=True)
     # export_video(imgs, result, model.CLASSES)
