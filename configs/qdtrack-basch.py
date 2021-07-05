@@ -200,15 +200,20 @@ test_pipeline = [
             )
         ])
 ]
-inference_pipeline = [
-    dict(type='LoadMultiImagesFromFile'),
-    dict(type='SeqResize', img_scale=(1296, 720), keep_ratio=True),
-    dict(type='SeqNormalize', **img_norm_cfg),
-    dict(type='SeqPad', size_divisor=32),
-    dict(type='SeqDefaultFormatBundle'),
-    dict(type='SeqCollect',
-         keys=['filename', 'ori_filename', 'ori_shape', 'img_shape', 'pad_shape', 'scale_factor', 'img_norm_cfg'],
-         ref_prefix='ref'),
+video_pipeline = [
+    dict(type='LoadImageFromWebcam'),
+    dict(
+        type='MultiScaleFlipAug',
+        img_scale=(1296, 720),
+        flip=False,
+        transforms=[
+            dict(type='Resize', keep_ratio=True),
+            # dict(type='RandomFlip'),
+            dict(type='Normalize', **img_norm_cfg),
+            dict(type='Pad', size_divisor=32),
+            dict(type='ImageToTensor', keys=['img']),
+            dict(type='VideoCollect', keys=['img'])
+        ])
 ]
 data = dict(
     samples_per_gpu=2,
@@ -242,10 +247,10 @@ data = dict(
         'labels/box_track_20/box_track_val_cocofmt.json',
         img_prefix=data_root + 'images/track/val/',
         pipeline=test_pipeline),
-    inference=dict(
-        ype=dataset_type,
-        # img_prefix=data_root + 'images/track/val/',
-        pipeline=inference_pipeline)
+    video=dict(
+        type=dataset_type,
+        img_prefix=data_root + 'data/BETRAC/',
+        pipeline=video_pipeline)
 )
 # optimizer
 optimizer = dict(type='SGD', lr=0.04, momentum=0.9, weight_decay=0.0001)

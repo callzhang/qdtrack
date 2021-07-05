@@ -74,6 +74,9 @@ def inference_model(model, imgs):
         will be returned, otherwise return the detection results directly.
     """
 
+    cfg = model.cfg
+    device = next(model.parameters()).device  # model device
+
     def video_generator(cap):
         while True:
             res, img = cap.read()
@@ -85,20 +88,19 @@ def inference_model(model, imgs):
     if isinstance(imgs, (list, tuple)):
         is_batch = True
         n_frame = len(imgs)
+        pipeline_cfg = cfg.data.test.pipeline
     elif isinstance(imgs, str) and imgs.endswith('.mp4'):
         is_batch = True
         cap = cv2.VideoCapture(imgs)
         n_frame = int(cap.get(cv2.CAP_PROP_FRAME_COUNT))
         imgs = video_generator(cap)
+        pipeline_cfg = cfg.data.video.pipeline
     else:
         raise Exception('does not support single image')
 
-    cfg = model.cfg
-    device = next(model.parameters()).device  # model device
-
     # cfg.data.inference.pipeline = replace_ImageToTensor(cfg.data.inference.pipeline)
     # pipeline = Compose(cfg.data.inference.pipeline)
-    cfg.data.test.pipeline = replace_ImageToTensor(cfg.data.test.pipeline)
+    cfg.data.test.pipeline = replace_ImageToTensor(pipeline_cfg)
     pipeline = Compose(cfg.data.test.pipeline)
 
     results = defaultdict(list)
@@ -107,7 +109,8 @@ def inference_model(model, imgs):
             # prepare data
             if isinstance(img, np.ndarray):
                 # directly add img
-                data = dict(img=img, img_prefix=None)
+                data = dict(img=img, img_prefix=None, frame_id=i,
+                            img_info=dict(filename=f'{img}_{i}.jpg'))
             else:
                 # add information into dict
                 data = dict(img_info=dict(filename=img), img_prefix=None)
