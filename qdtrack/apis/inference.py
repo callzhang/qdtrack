@@ -54,7 +54,7 @@ def init_model(config, checkpoint=None, device='cuda:0', cfg_options=None):
             warnings.warn('Class names are not saved in the checkpoint\'s '
                           'meta data, use COCO classes by default.')
             model.CLASSES = get_classes('coco')
-    wrap_fp16_model(model)
+    # wrap_fp16_model(model)
     model.cfg = config  # save the config in the model for convenience
     model.to(device)
     model.eval()
