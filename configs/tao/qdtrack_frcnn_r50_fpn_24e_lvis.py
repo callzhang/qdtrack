@@ -28,6 +28,22 @@ train_pipeline = [
 ]
 # dataset settings
 dataset_type = 'TaoDataset'
+data_root = 'data/DETRAC/'
+video_pipeline = [
+    dict(type='LoadImageFromWebcam'),
+    dict(
+        type='MultiScaleFlipAug',
+        img_scale=(1296, 720),
+        flip=False,
+        transforms=[
+            dict(type='Resize', keep_ratio=True),
+            # dict(type='RandomFlip'),
+            dict(type='Normalize', **img_norm_cfg),
+            dict(type='Pad', size_divisor=32),
+            dict(type='ImageToTensor', keys=['img']),
+            dict(type='VideoCollect', keys=['img'])
+        ])
+]
 data = dict(
     samples_per_gpu=2,
     workers_per_gpu=2,
@@ -41,6 +57,12 @@ data = dict(
             load_as_video=False,
             ann_file='data/lvis/annotations/lvis-0.5_coco2017_train.json',
             img_prefix='data/lvis/train2017/',
-            pipeline=train_pipeline)))
+            pipeline=train_pipeline)),
+            
+    video=dict(
+        type=dataset_type,
+        img_prefix=data_root + 'data/BETRAC/',
+        pipeline=video_pipeline)
+)
 # optimizer
 optimizer = dict(type='SGD', lr=0.02, momentum=0.9, weight_decay=0.0001)

@@ -89,7 +89,8 @@ def inference_model(model, imgs):
         is_batch = True
         n_frame = len(imgs)
         pipeline_cfg = cfg.data.test.pipeline
-    elif isinstance(imgs, str) and imgs.endswith('.mp4'):
+    elif isinstance(imgs, str) and imgs.lower().endswith('.mp4'):
+        assert os.path.exists(imgs), '{} not exists'.format(imgs)
         is_batch = True
         cap = cv2.VideoCapture(imgs)
         n_frame = int(cap.get(cv2.CAP_PROP_FRAME_COUNT))
@@ -121,7 +122,8 @@ def inference_model(model, imgs):
             data['img_metas'][0][0]['frame_id'] = i
             data['img'] = [data['img'][0].data.unsqueeze(0).cuda()]
 
-            # forward the model 
+            # forward the model
+            #TODO: add batch inference
             result = model(return_loss=False, rescale=True, **data)
 
             for k, v in result.items():
